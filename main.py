@@ -1,11 +1,16 @@
 import psutil #Processes and system utilities library
 import time # For sleeping
+from datetime import datetime # For logging time
 
 # Store previous processes
 previous_processes = {}
 first_run = True
 
+
 while True:
+    # Timing
+    current_time = datetime.now()
+    formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]  # HH:MM:SS:MM [:-3] removes the last 3 digits
     print("Monitoring processes")
     # Store current processes
     current_processes = {}
@@ -25,10 +30,10 @@ while True:
         terminated_processes = previous_processes.keys() - current_processes.keys()
 
         for pid in new_processes:
-            print(f"[NEW PROCESS] PID: {pid} | Name: {current_processes[pid]}")
+            print(f"[{formatted_time}] [NEW PROCESS] PID: {pid} | Name: {current_processes[pid]}")
 
         for pid in terminated_processes:
-            print(f"[TERMINATED PROCESS] PID: {pid} | Name: {previous_processes[pid]}")
+            print(f"[{formatted_time}] [TERMINATED PROCESS] PID: {pid} | Name: {previous_processes[pid]}")
 
         previous_processes = current_processes
     # Pause execution for updated list in seconds
