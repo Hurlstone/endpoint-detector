@@ -6,18 +6,33 @@ from datetime import datetime # For logging time
 previous_processes = {}
 first_run = True
 
-
-while True:
+# Function for writing a string/event to the log file
+def log_event(event):
     # Timing
     current_time = datetime.now()
     formatted_time = current_time.strftime("%H:%M:%S.%f")[:-3]  # HH:MM:SS:MM [:-3] removes the last 3 digits
+    formatted_event = f"{formatted_time} | {event}"
+    with open("events.log", "a") as file:
+        file.write(formatted_event + "\n")
+    print(formatted_event)
+
+while True:
     print("Monitoring processes")
+
     # Store current processes
     current_processes = {}
+
     # Iterate through all processes running on the device and print it out
-    for process in psutil.process_iter(['pid', 'name', 'username']):
+    for process in psutil.process_iter(['pid', 'name', 'username', 'create_time']):
+
+
         #print(f"PID: {process.info['pid']} | Name: {process.info['name']} | Username: {process.info['username']}")
-        current_processes[process.info['pid']] = process.info['name']
+        try:
+            if process.info['create_time'] is None:
+                continue
+            current_processes[(process.info['pid'], process.info['create_time'])] = process.info['name']
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
 
 
     if first_run:
@@ -29,12 +44,21 @@ while True:
 
         terminated_processes = previous_processes.keys() - current_processes.keys()
 
-        for pid in new_processes:
-            print(f"[{formatted_time}] [NEW PROCESS] PID: {pid} | Name: {current_processes[pid]}")
+        for process_key in new_processes:
+            pid = process_key[0]
+            event = f"[NEW PROCESS] PID: {pid} | Name: {current_processes[process_key]}"
 
-        for pid in terminated_processes:
-            print(f"[{formatted_time}] [TERMINATED PROCESS] PID: {pid} | Name: {previous_processes[pid]}")
+            # Write new events to log file
+            log_event(event)
+
+        for process_key in terminated_processes:
+            pid = process_key[0]
+            event = f"[TERMINATED PROCESS] PID: {pid} | Name: {previous_processes[process_key]}"
+
+            # Write terminated events to log file
+            log_event(event)
 
         previous_processes = current_processes
+
     # Pause execution for updated list in seconds
     time.sleep(1)
