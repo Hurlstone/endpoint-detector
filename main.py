@@ -4,7 +4,11 @@ from datetime import datetime # For logging time
 
 # Store previous processes
 previous_processes = {}
+
 first_run = True
+
+#Keywords to flag in processes
+suspicious_processes = ["nc", "nmap", "tcpdump"]
 
 # Function for writing a string/event to the log file
 def log_event(event):
@@ -47,9 +51,13 @@ while True:
         for process_key in new_processes:
             pid = process_key[0]
             event = f"[NEW PROCESS] PID: {pid} | Name: {current_processes[process_key]}"
-
             # Write new events to log file
             log_event(event)
+            # Check for suspicious processes
+            if current_processes[process_key] in suspicious_processes:
+                suspicious_event = f"[WARNING SUSPICIOUS PROCESS] PID: {pid} | Name: {current_processes[process_key]}"
+                log_event(suspicious_event)
+
 
         for process_key in terminated_processes:
             pid = process_key[0]
